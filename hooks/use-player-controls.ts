@@ -15,22 +15,22 @@ export interface PlayerState {
   attacking: boolean
 }
 
-const SPEED = 5 // pixels por frame
+const DEFAULT_SPEED = 5
 const ATTACK_MS = 320
 const JUMP_MS = 520
 
+type InputState = Record<string, boolean>
+
 /**
- * Mapeamento de teclas:
- *  - W / A / S / D  -> movimento (cima, esquerda, baixo, direita)
- *  - J / Espaço     -> ataque
- *  - K / Shift       -> pulo
- * Todas as quatro setas também movem o personagem.
+ * Captura o teclado uma única vez e mantém o estado fora do React.
+ * O loop de frames é o único lugar que aplica movimento, então segurar
+ * uma tecla não depende da repetição nativa do sistema operacional.
  */
 export function usePlayerControls(
   enabled: boolean,
   onAttack?: () => void,
   stage: number = 1,
-  speed: number = SPEED,
+  speed: number = DEFAULT_SPEED,
   onFirstMovement?: () => void,
 ) {
   const [state, setState] = useState<PlayerState>({
@@ -42,143 +42,125 @@ export function usePlayerControls(
     attacking: false,
   })
 
-  const keys = useRef<Set<string>>(new Set())
+  const keysPressed = useRef<InputState>({})
+  const enabledRef = useRef(enabled)
   const attackUntil = useRef(0)
   const jumpUntil = useRef(0)
-  const raf = useRef<number | null>(null)
-  const lastFrameTime = useRef<number | null>(null)
   const movementStarted = useRef(false)
+  const lastFrameTime = useRef<number | null>(null)
+  const onAttackRef = useRef(onAttack)
+  const onFirstMovementRef = useRef(onFirstMovement)
+
+  useEffect(() => {
+    enabledRef.current = enabled
+  }, [enabled])
+
+  useEffect(() => {
+    onAttackRef.current = onAttack
+    onFirstMovementRef.current = onFirstMovement
+  }, [onAttack, onFirstMovement])
 
   const triggerAttack = useCallback(() => {
+    if (!enabledRef.current) return
     attackUntil.current = performance.now() + ATTACK_MS
-    onAttack?.()
-  }, [onAttack])
+    onAttackRef.current?.()
+  }, [])
 
   const triggerJump = useCallback(() => {
-    if (performance.now() < jumpUntil.current) return
+    if (!enabledRef.current || performance.now() < jumpUntil.current) return
     jumpUntil.current = performance.now() + JUMP_MS
   }, [])
 
+  // Listeners permanecem ativos durante cutscenes; apenas o loop bloqueia a aplicação.
   useEffect(() => {
-    if (!enabled) {
-      keys.current.clear()
-      lastFrameTime.current = null
-      return
-    }
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.repeat) return
 
-    // Recupera o foco após cutscenes/transições e garante que nenhum input antigo persista.
-    keys.current.clear()
-    window.focus()
-    const gameContainer = document.querySelector<HTMLElement>('[aria-label="Área de jogo"]')
-    gameContainer?.focus({ preventScroll: true })
-
-    const down = (e: KeyboardEvent) => {
-      const code = e.code
-      const movementKeys = [
-        "KeyW",
-        "KeyA",
-        "KeyS",
-        "KeyD",
-        "ArrowUp",
-        "ArrowDown",
-        "ArrowLeft",
-        "ArrowRight",
-      ]
-
-      // Captura globalmente e impede a rolagem durante o gameplay.
-      // O primeiro keydown registra a tecla; os repeats nativos não disparam ações extras.
-      if (e.repeat) return
-
-      if (movementKeys.includes(code) || code === "Space") {
-        e.preventDefault()
-      }
-
-      if (code === "KeyJ" || code === "Space") {
+      const key = event.key.toLowerCase()
+      if (key === "j" || key === " ") {
         triggerAttack()
         return
       }
-      if (code === "KeyK" || code === "ShiftLeft" || code === "ShiftRight") {
+      if (key === "k" || key === "shift") {
         triggerJump()
         return
       }
-      keys.current.add(code)
+
+      keysPressed.current[key] = true
     }
 
-    const up = (e: KeyboardEvent) => {
-      keys.current.delete(e.code)
+    const handleKeyUp = (event: KeyboardEvent) => {
+      keysPressed.current[event.key.toLowerCase()] = false
     }
 
-    window.addEventListener("keydown", down)
-    window.addEventListener("keyup", up)
+    window.addEventListener("keydown", handleKeyDown)
+    window.addEventListener("keyup", handleKeyUp)
     return () => {
-      window.removeEventListener("keydown", down)
-      window.removeEventListener("keyup", up)
+      window.removeEventListener("keydown", handleKeyDown)
+      window.removeEventListener("keyup", handleKeyUp)
+      keysPressed.current = {}
     }
-  }, [enabled, triggerAttack, triggerJump])
+  }, [triggerAttack, triggerJump])
 
   useEffect(() => {
-    // Cada fase começa em estado seguro: a IA só desperta no primeiro movimento.
     movementStarted.current = false
     const spawnX = stage === 1 ? -260 : -220
     setState((current) => ({ ...current, x: spawnX, y: 0, facing: "right" }))
   }, [stage])
 
   useEffect(() => {
-    if (!enabled) {
-      movementStarted.current = false
-      keys.current.clear()
-      lastFrameTime.current = null
-    }
-  }, [enabled])
+    let animationFrame = 0
 
-  useEffect(() => {
-    if (!enabled) return
-
-    const tick = (timestamp: number) => {
-      const previousTimestamp = lastFrameTime.current ?? timestamp
-      const deltaMs = Math.min(timestamp - previousTimestamp, 50)
-      const frameScale = deltaMs / (1000 / 60)
+    const frame = (timestamp: number) => {
+      const previous = lastFrameTime.current ?? timestamp
+      const delta = Math.min(timestamp - previous, 50) / 1000
       lastFrameTime.current = timestamp
 
-      setState((prev) => {
-        const held = keys.current
+      setState((current) => {
+        const input = keysPressed.current
+        const canUpdate = enabledRef.current
         let dx = 0
         let dy = 0
-        let facing = prev.facing
+        let facing = current.facing
 
-        if (held.has("KeyA") || held.has("ArrowLeft")) {
-          dx -= speed * frameScale
-          facing = "left"
+        if (canUpdate) {
+          if (input.a || input.arrowleft) {
+            dx -= speed * delta * 60
+            facing = "left"
+          }
+          if (input.d || input.arrowright) {
+            dx += speed * delta * 60
+            facing = "right"
+          }
+          if (input.w || input.arrowup) {
+            dy -= speed * delta * 60
+            facing = "up"
+          }
+          if (input.s || input.arrowdown) {
+            dy += speed * delta * 60
+            facing = "down"
+          }
         }
-        if (held.has("KeyD") || held.has("ArrowRight")) {
-          dx += speed * frameScale
-          facing = "right"
-        }
-        if (held.has("KeyW")) {
-          dy -= speed * frameScale
-          facing = "up"
-        }
-        if (held.has("KeyS") || held.has("ArrowDown")) {
-          dy += speed * frameScale
-          facing = "down"
+
+        const moving = dx !== 0 || dy !== 0
+        if (moving && !movementStarted.current) {
+          movementStarted.current = true
+          onFirstMovementRef.current?.()
         }
 
         const now = performance.now()
         const attacking = now < attackUntil.current
         const jumping = now < jumpUntil.current
-        const moving = dx !== 0 || dy !== 0
-        if (moving && !movementStarted.current) {
-          movementStarted.current = true
-          onFirstMovement?.()
-        }
+        let x = current.x
+        let y = current.y
 
-        // Aplica colisão
-        let nx = prev.x + dx
-        let ny = prev.y + dy
-        
-        if (!canMove(nx, ny, 24, 28, stage)) {
-          nx = prev.x
-          ny = prev.y
+        if (moving) {
+          const nextX = current.x + dx
+          const nextY = current.y + dy
+          if (canMove(nextX, nextY, 24, 28, stage)) {
+            x = nextX
+            y = nextY
+          }
         }
 
         let action: PlayerAction = "idle"
@@ -186,18 +168,32 @@ export function usePlayerControls(
         else if (jumping) action = "jump"
         else if (moving) action = "walk"
 
-        return { x: nx, y: ny, facing, action, jumping, attacking }
+        return { x, y, facing, action, jumping, attacking }
       })
-      raf.current = requestAnimationFrame(tick)
+
+      animationFrame = window.requestAnimationFrame(frame)
     }
 
-    raf.current = requestAnimationFrame(tick)
+    animationFrame = window.requestAnimationFrame(frame)
     return () => {
-      if (raf.current) cancelAnimationFrame(raf.current)
-      raf.current = null
+      window.cancelAnimationFrame(animationFrame)
       lastFrameTime.current = null
+      keysPressed.current = {}
     }
-  }, [enabled, onFirstMovement, speed, stage])
+  }, [speed, stage])
+
+  useEffect(() => {
+    if (!enabled) {
+      keysPressed.current = {}
+      lastFrameTime.current = null
+      movementStarted.current = false
+      window.focus()
+      document.querySelector<HTMLElement>('[aria-label="Área de jogo"]')?.focus({ preventScroll: true })
+    }
+  }, [enabled])
 
   return state
 }
+
+export type UseKeyboard = typeof usePlayerControls
+export const useKeyboard = usePlayerControls
