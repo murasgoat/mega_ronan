@@ -193,21 +193,19 @@ export default function Page() {
     handleFirstMovement,
   )
 
-  // Cutscene de entrada do Chefe Final: ao primeiro movimento na Fase 5,
-  // congela o jogador (~1.8s), toca a animação de despertar e então
-  // libera o controle e ativa a IA de perseguição do Boss.
+  // A cutscene só começa depois do primeiro passo. O timer não depende de
+  // bossCutscene: assim, a própria mudança para `true` não cancela o timer.
   useEffect(() => {
     if (phase !== "playing" || stage !== 5 || !hasPlayerMoved || bossAwakened || bossCutscene) return
 
     setBossCutscene(true)
     bossCutsceneTimerRef.current = window.setTimeout(() => {
-      // Cleanup explícito: a IA e os listeners só voltam depois que o lock é removido.
       bossCutsceneTimerRef.current = null
       setBossCutscene(false)
       setBossAwakened(true)
       window.focus()
       gameContainerRef.current?.focus({ preventScroll: true })
-    }, 1800)
+    }, 1500)
 
     return () => {
       if (bossCutsceneTimerRef.current !== null) {
@@ -215,7 +213,21 @@ export default function Page() {
         bossCutsceneTimerRef.current = null
       }
     }
-  }, [phase, stage, hasPlayerMoved, bossAwakened, bossCutscene])
+  }, [phase, stage, hasPlayerMoved, bossAwakened])
+
+  // Fallback independente: nenhuma transição pode deixar os controles presos.
+  useEffect(() => {
+    if (!bossCutscene) return
+
+    const safetyTimer = window.setTimeout(() => {
+      setBossCutscene(false)
+      setBossAwakened(true)
+      window.focus()
+      gameContainerRef.current?.focus({ preventScroll: true })
+    }, 2000)
+
+    return () => window.clearTimeout(safetyTimer)
+  }, [bossCutscene])
 
   const interact = useCallback(() => {
     const near = (targetX: number, targetY: number, radius: number) =>

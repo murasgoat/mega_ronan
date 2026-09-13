@@ -19,7 +19,7 @@ const DEFAULT_SPEED = 5
 const ATTACK_MS = 320
 const JUMP_MS = 520
 
-type InputState = Record<string, boolean>
+type InputState = Set<string>
 
 /**
  * Captura o teclado uma única vez e mantém o estado fora do React.
@@ -42,7 +42,7 @@ export function usePlayerControls(
     attacking: false,
   })
 
-  const keysPressed = useRef<InputState>({})
+  const keysPressed = useRef<InputState>(new Set())
   const enabledRef = useRef(enabled)
   const attackUntil = useRef(0)
   const jumpUntil = useRef(0)
@@ -86,11 +86,11 @@ export function usePlayerControls(
         return
       }
 
-      keysPressed.current[key] = true
+      keysPressed.current.add(key)
     }
 
     const handleKeyUp = (event: KeyboardEvent) => {
-      keysPressed.current[event.key.toLowerCase()] = false
+      keysPressed.current.delete(event.key.toLowerCase())
     }
 
     window.addEventListener("keydown", handleKeyDown)
@@ -98,7 +98,7 @@ export function usePlayerControls(
     return () => {
       window.removeEventListener("keydown", handleKeyDown)
       window.removeEventListener("keyup", handleKeyUp)
-      keysPressed.current = {}
+      keysPressed.current = new Set()
     }
   }, [triggerAttack, triggerJump])
 
@@ -124,19 +124,19 @@ export function usePlayerControls(
         let facing = current.facing
 
         if (canUpdate) {
-          if (input.a || input.arrowleft) {
+          if (input.has("a") || input.has("arrowleft")) {
             dx -= speed * delta * 60
             facing = "left"
           }
-          if (input.d || input.arrowright) {
+          if (input.has("d") || input.has("arrowright")) {
             dx += speed * delta * 60
             facing = "right"
           }
-          if (input.w || input.arrowup) {
+          if (input.has("w") || input.has("arrowup")) {
             dy -= speed * delta * 60
             facing = "up"
           }
-          if (input.s || input.arrowdown) {
+          if (input.has("s") || input.has("arrowdown")) {
             dy += speed * delta * 60
             facing = "down"
           }
@@ -178,13 +178,13 @@ export function usePlayerControls(
     return () => {
       window.cancelAnimationFrame(animationFrame)
       lastFrameTime.current = null
-      keysPressed.current = {}
+      keysPressed.current = new Set()
     }
   }, [speed, stage])
 
   useEffect(() => {
     if (!enabled) {
-      keysPressed.current = {}
+      keysPressed.current = new Set()
       lastFrameTime.current = null
       movementStarted.current = false
       window.focus()
