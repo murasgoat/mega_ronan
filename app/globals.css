@@ -284,47 +284,48 @@
 .isabella-sprite {
   position: relative;
   z-index: 1;
-  height: 242px;
-  width: 176px;
+  height: 270px;
+  width: 205px;
   filter: drop-shadow(0 16px 0 rgba(91, 33, 27, .16));
 }
 
 .isabella-sprite-art {
   position: absolute;
   inset: 0;
-  background-image: url('/sprites/isabella-royal-pixel.png');
-  background-repeat: no-repeat;
-  background-size: 400% 100%;
-  background-position: 0 0;
+  display: block;
+  height: 100%;
+  width: 100%;
+  object-fit: contain;
   image-rendering: pixelated;
-  animation: isabella-idle 2.8s steps(4, end) infinite;
+  image-rendering: crisp-edges;
+  transform-origin: 50% 90%;
+  animation: isabella-idle 2.8s ease-in-out infinite;
 }
 
 .isabella-speaking .isabella-sprite-art {
-  animation: isabella-speaking 1.15s steps(4, end) infinite;
+  animation: isabella-speaking 1.15s ease-in-out infinite;
 }
 
 .isabella-relieved .isabella-sprite-art {
-  animation: isabella-relieved 1.45s steps(4, end) both;
+  animation: isabella-relieved 1.45s ease-out both;
 }
 
 @keyframes isabella-idle {
-  0%, 28% { background-position: 0 0; transform: translateY(0); }
-  32%, 52% { background-position: 33.333% 0; transform: translateY(-2px); }
-  56%, 78% { background-position: 0 0; transform: translateY(0); }
-  82%, 100% { background-position: 66.666% 0; transform: translateY(-1px); }
+  0%, 100% { transform: translateY(0) scale(1); }
+  45% { transform: translateY(-2px) scale(1.006, .997); }
+  52% { transform: translateY(-1px) scale(.998, 1.003); }
 }
 
 @keyframes isabella-speaking {
-  0%, 18% { background-position: 0 0; transform: translateY(0) rotate(0); }
-  25%, 55% { background-position: 66.666% 0; transform: translateY(-2px) rotate(-1deg); }
-  62%, 100% { background-position: 0 0; transform: translateY(0) rotate(0); }
+  0%, 100% { transform: translateY(0) rotate(0); }
+  28% { transform: translateY(-2px) rotate(-1deg); }
+  58% { transform: translateY(0) rotate(1deg); }
 }
 
 @keyframes isabella-relieved {
-  0% { background-position: 0 0; transform: translateY(0) scale(1); filter: brightness(1); }
-  38% { background-position: 100% 0; transform: translateY(-7px) scale(1.025); filter: brightness(1.14); }
-  72%, 100% { background-position: 0 0; transform: translateY(0) scale(1); filter: brightness(1); }
+  0% { transform: translateY(0) scale(1); filter: brightness(1); }
+  38% { transform: translateY(-8px) scale(1.025); filter: brightness(1.14); }
+  72%, 100% { transform: translateY(0) scale(1); filter: brightness(1); }
 }
 
 .isabella-glitter {

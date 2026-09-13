@@ -82,7 +82,12 @@ function IsabellaSprite({ mood = "speaking" }: { mood?: "speaking" | "relieved" 
       role="img"
       aria-label="Princesa Isabella em seu vestido real"
     >
-      <div className="isabella-sprite-art" aria-hidden="true" />
+      <img
+        className="isabella-sprite-art"
+        src="/sprites/isabella-clean-pixel.png"
+        alt=""
+        aria-hidden="true"
+      />
       <div className="isabella-glitter" aria-hidden="true">
         <span />
         <span />
@@ -446,8 +451,7 @@ export default function Page() {
         {!finished ? (
           <section className="relative z-10 flex w-full max-w-3xl flex-col items-center gap-5">
       <div className="relative flex h-72 w-full items-end justify-center">
-        <div className="rescue-player absolute bottom-2 left-[28%] h-24 w-16" aria-label="Jogador" />
-        <IsabellaSprite mood={finalLine === 1 ? "relieved" : "speaking"} />
+          <IsabellaSprite mood={finalLine === 1 ? "relieved" : "speaking"} />
       </div>
             <div className="w-full border-4 border-amber-700 bg-stone-950/95 p-6 text-left shadow-[8px_8px_0_rgba(72,45,20,0.35)]">
               <p className="font-pixel text-xs uppercase tracking-[0.2em] text-amber-400">Princesa Isabella</p>
