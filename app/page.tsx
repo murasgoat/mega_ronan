@@ -197,17 +197,18 @@ export default function Page() {
   // congela o jogador (~1.8s), toca a animação de despertar e então
   // libera o controle e ativa a IA de perseguição do Boss.
   useEffect(() => {
-    if (phase !== "playing" || stage !== 5 || !hasPlayerMoved || bossAwakened || bossCutscene) return
+    if (phase !== "playing" || stage !== 5 || !hasPlayerMoved || bossAwakened) return
 
     setBossCutscene(true)
+    // O timer fica fora das dependências: mudar bossCutscene para true não pode
+    // executar o cleanup e cancelar o próprio desbloqueio.
     bossCutsceneTimerRef.current = window.setTimeout(() => {
-      // Cleanup explícito: a IA e os listeners só voltam depois que o lock é removido.
       bossCutsceneTimerRef.current = null
       setBossCutscene(false)
       setBossAwakened(true)
       window.focus()
       gameContainerRef.current?.focus({ preventScroll: true })
-    }, 1800)
+    }, 1500)
 
     return () => {
       if (bossCutsceneTimerRef.current !== null) {
@@ -215,7 +216,7 @@ export default function Page() {
         bossCutsceneTimerRef.current = null
       }
     }
-  }, [phase, stage, hasPlayerMoved, bossAwakened, bossCutscene])
+  }, [phase, stage, hasPlayerMoved, bossAwakened])
 
   const interact = useCallback(() => {
     const near = (targetX: number, targetY: number, radius: number) =>
