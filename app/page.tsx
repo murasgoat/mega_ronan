@@ -15,7 +15,13 @@ import type { Enemy, Dragon, Projectile } from "@/lib/enemy-ai"
 import { updateSoldier, updateDragon, updateBoss } from "@/lib/enemy-ai"
 import { isInViewport, STAGE_THEMES } from "@/lib/stage-themes"
 
-type Phase = "select" | "intro" | "dialogue" | "playing" | "clear"
+type Phase = "select" | "intro" | "dialogue" | "playing" | "rescue" | "clear"
+
+const FINAL_DIALOGUE_LINES = [
+  "É você mesmo? Eu sou a Princesa Isabella... por favor, me diga que não estou sonhando.",
+  "Não temos tempo! Se souberem que Isabella está livre, vão fechar os portões. Me dê uma espada!",
+  "Conseguimos... Você arriscou tudo por mim, e eu jamais esquecerei o que fez por Isabella.",
+]
 
 const DIALOGUE_LINES = [
   "Vocês não são daqui, forasteiros... o Tabuleiro os trouxe através do véu do tempo.",
@@ -69,9 +75,23 @@ const ENEMY_STAGE_CONFIG: Record<3 | 4 | 5, {
   5: { scale: "h-56 w-56", barClass: "w-40", hitReach: 170, contactRange: 150, contactDamage: 20 },
 }
 
+function IsabellaSprite() {
+  return (
+    <div className="isabella-sprite" role="img" aria-label="Princesa Isabella em seu vestido real">
+      <div className="isabella-crown" />
+      <div className="isabella-head" />
+      <div className="isabella-hair" />
+      <div className="isabella-dress" />
+      <div className="isabella-sleeve isabella-sleeve-left" />
+      <div className="isabella-sleeve isabella-sleeve-right" />
+    </div>
+  )
+}
+
 export default function Page() {
   const [phase, setPhase] = useState<Phase>("select")
   const [line, setLine] = useState(0)
+  const [finalLine, setFinalLine] = useState(0)
   const [hero, setHero] = useState(PARTY[0])
   const [stage, setStage] = useState<StageId>(1)
   const [transitionStage, setTransitionStage] = useState<StageId | null>(null)
@@ -95,6 +115,7 @@ export default function Page() {
 
   const beginStage = useCallback((next: StageId) => {
     setStage(next)
+    setFinalLine(0)
     setObjectiveProgress(0)
     setDragonHp(8)
     setDragonProjectiles([])
@@ -168,10 +189,12 @@ export default function Page() {
             if (updated.every((enemy) => enemy.hp <= 0)) {
               completeObjective("final-enemies", 1)
             }
-          } else if (stage === 5) {
-            if (updated[0]?.hp <= 0) {
-              completeObjective("shadow-mage", 1)
-            }
+          } else if (stage === 5 && updated[0]?.hp <= 0) {
+            setEnemies([])
+            setBossCutscene(false)
+            setBossAwakened(false)
+            setFinalLine(0)
+            setPhase("rescue")
           }
 
           return updated
@@ -391,6 +414,55 @@ export default function Page() {
   }
 
   if (phase === "intro") return <IntroCutscene onEnter={() => setPhase("dialogue")} />
+
+  if (phase === "rescue") {
+    const finished = finalLine >= FINAL_DIALOGUE_LINES.length
+    const advanceFinalDialogue = () => {
+      if (finished) return
+      setFinalLine((current) => current + 1)
+    }
+
+    return (
+      <main
+        className="rescue-scene relative flex min-h-dvh items-center justify-center overflow-hidden p-6 text-center"
+        onClick={advanceFinalDialogue}
+        onKeyDown={(event) => {
+          if (event.key === " " || event.key === "Enter") {
+            event.preventDefault()
+            advanceFinalDialogue()
+          }
+        }}
+        tabIndex={0}
+        autoFocus
+        aria-label="Cena de resgate da Princesa Isabella"
+      >
+        <div className="rescue-light absolute inset-0" aria-hidden="true" />
+        {!finished ? (
+          <section className="relative z-10 flex w-full max-w-3xl flex-col items-center gap-5">
+            <div className="relative flex h-72 w-full items-end justify-center">
+              <div className="rescue-player absolute bottom-2 left-[28%] h-24 w-16" aria-label="Jogador" />
+              <IsabellaSprite />
+            </div>
+            <div className="w-full border-4 border-amber-700 bg-stone-950/95 p-6 text-left shadow-[8px_8px_0_rgba(72,45,20,0.35)]">
+              <p className="font-pixel text-xs uppercase tracking-[0.2em] text-amber-400">Princesa Isabella</p>
+              <p className="mt-4 font-pixel-body text-3xl leading-tight text-amber-50">{FINAL_DIALOGUE_LINES[finalLine]}</p>
+              <p className="mt-5 text-right font-pixel-body text-lg text-amber-300">Espaço, Enter ou clique para continuar</p>
+            </div>
+          </section>
+        ) : (
+          <section className="relative z-10 max-w-2xl border-4 border-amber-400 bg-stone-950/95 p-10 shadow-[10px_10px_0_rgba(72,45,20,0.45)]">
+            <p className="font-pixel text-xs uppercase tracking-[0.25em] text-amber-400">Vitória</p>
+            <h1 className="mt-5 font-pixel text-3xl leading-relaxed text-amber-100">PARABÉNS! VOCÊ SALVOU A PRINCESA ISABELLA</h1>
+            <div className="mt-8 flex flex-wrap justify-center gap-4">
+              <button className="border-2 border-amber-400 bg-amber-400 px-5 py-3 font-pixel-body text-xl text-stone-950 hover:bg-amber-300" onClick={(event) => { event.stopPropagation(); window.location.reload() }}>Jogar Novamente</button>
+              <button className="border-2 border-amber-300 px-5 py-3 font-pixel-body text-xl text-amber-100 hover:bg-amber-300 hover:text-stone-950" onClick={(event) => { event.stopPropagation(); setPhase("select"); setFinalLine(0) }}>Menu Principal</button>
+            </div>
+          </section>
+        )}
+      </main>
+    )
+  }
+
   if (phase === "clear" || isFinalVictory)
     return (
       <main className="flex min-h-dvh items-center justify-center bg-stone-950 p-6 text-center text-amber-50">

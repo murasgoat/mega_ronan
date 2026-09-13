@@ -263,6 +263,96 @@
   animation: boss-awaken-banner 1.8s ease-in-out both;
 }
 
+.rescue-scene {
+  background: linear-gradient(180deg, #dbeafe 0%, #fef3c7 48%, #f8fafc 100%);
+  color: #422006;
+}
+
+.rescue-light {
+  background: radial-gradient(circle at 50% 22%, rgba(255,255,255,.95), transparent 35%), linear-gradient(90deg, rgba(180,83,9,.08), transparent 25% 75%, rgba(180,83,9,.08));
+}
+
+.rescue-scene::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0;
+  height: 22%;
+  background: repeating-linear-gradient(90deg, rgba(120,53,15,.12) 0 3px, transparent 3px 90px), #d6a15d;
+  border-top: 8px solid rgba(120,53,15,.25);
+}
+
+.isabella-sprite {
+  position: relative;
+  z-index: 1;
+  height: 220px;
+  width: 150px;
+  filter: drop-shadow(0 14px 0 rgba(120,53,15,.14));
+}
+
+.isabella-crown {
+  position: absolute;
+  left: 52px;
+  top: 0;
+  z-index: 3;
+  height: 28px;
+  width: 48px;
+  background: #facc15;
+  clip-path: polygon(0 100%, 8% 20%, 30% 62%, 50% 0, 70% 62%, 92% 20%, 100% 100%);
+  border-bottom: 5px solid #a16207;
+}
+
+.isabella-head {
+  position: absolute;
+  left: 49px;
+  top: 19px;
+  height: 62px;
+  width: 54px;
+  background: #f5c7a9;
+  border: 5px solid #78350f;
+  box-shadow: inset 0 -12px #fca5a5;
+}
+
+.isabella-hair {
+  position: absolute;
+  left: 35px;
+  top: 24px;
+  height: 82px;
+  width: 82px;
+  border: 12px solid #92400e;
+  border-top-width: 18px;
+  border-radius: 48% 48% 42% 42%;
+}
+
+.isabella-dress {
+  position: absolute;
+  left: 15px;
+  top: 77px;
+  height: 143px;
+  width: 120px;
+  background: linear-gradient(90deg, #312e81, #818cf8 48%, #312e81);
+  border: 6px solid #1e1b4b;
+  clip-path: polygon(38% 0, 62% 0, 72% 35%, 100% 100%, 0 100%, 28% 35%);
+}
+
+.isabella-sleeve {
+  position: absolute;
+  top: 92px;
+  height: 24px;
+  width: 52px;
+  background: #f5c7a9;
+  border: 5px solid #78350f;
+}
+
+.isabella-sleeve-left { left: 0; transform: rotate(25deg); }
+.isabella-sleeve-right { right: 0; transform: rotate(-25deg); }
+
+.rescue-player {
+  z-index: 2;
+  background: linear-gradient(90deg, #1e293b 0 30%, #60a5fa 30% 70%, #1e293b 70%);
+  border: 5px solid #0f172a;
+  clip-path: polygon(25% 0, 75% 0, 100% 25%, 88% 100%, 12% 100%, 0 25%);
+}
+
 @keyframes player-walk {
   0%,
   100% {
