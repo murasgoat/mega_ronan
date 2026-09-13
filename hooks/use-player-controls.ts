@@ -46,6 +46,7 @@ export function usePlayerControls(
   const attackUntil = useRef(0)
   const jumpUntil = useRef(0)
   const raf = useRef<number | null>(null)
+  const lastFrameTime = useRef<number | null>(null)
   const movementStarted = useRef(false)
 
   const triggerAttack = useCallback(() => {
@@ -61,6 +62,7 @@ export function usePlayerControls(
   useEffect(() => {
     if (!enabled) {
       keys.current.clear()
+      lastFrameTime.current = null
       return
     }
 
@@ -84,6 +86,9 @@ export function usePlayerControls(
       ]
 
       // Captura globalmente e impede a rolagem durante o gameplay.
+      // O primeiro keydown registra a tecla; os repeats nativos não disparam ações extras.
+      if (e.repeat) return
+
       if (movementKeys.includes(code) || code === "Space") {
         e.preventDefault()
       }
@@ -122,13 +127,19 @@ export function usePlayerControls(
     if (!enabled) {
       movementStarted.current = false
       keys.current.clear()
+      lastFrameTime.current = null
     }
   }, [enabled])
 
   useEffect(() => {
     if (!enabled) return
 
-    const tick = () => {
+    const tick = (timestamp: number) => {
+      const previousTimestamp = lastFrameTime.current ?? timestamp
+      const deltaMs = Math.min(timestamp - previousTimestamp, 50)
+      const frameScale = deltaMs / (1000 / 60)
+      lastFrameTime.current = timestamp
+
       setState((prev) => {
         const held = keys.current
         let dx = 0
@@ -136,19 +147,19 @@ export function usePlayerControls(
         let facing = prev.facing
 
         if (held.has("KeyA") || held.has("ArrowLeft")) {
-          dx -= speed
+          dx -= speed * frameScale
           facing = "left"
         }
         if (held.has("KeyD") || held.has("ArrowRight")) {
-          dx += speed
+          dx += speed * frameScale
           facing = "right"
         }
         if (held.has("KeyW")) {
-          dy -= speed
+          dy -= speed * frameScale
           facing = "up"
         }
         if (held.has("KeyS") || held.has("ArrowDown")) {
-          dy += speed
+          dy += speed * frameScale
           facing = "down"
         }
 
@@ -183,6 +194,8 @@ export function usePlayerControls(
     raf.current = requestAnimationFrame(tick)
     return () => {
       if (raf.current) cancelAnimationFrame(raf.current)
+      raf.current = null
+      lastFrameTime.current = null
     }
   }, [enabled, onFirstMovement, speed, stage])
 
