@@ -75,15 +75,21 @@ const ENEMY_STAGE_CONFIG: Record<3 | 4 | 5, {
   5: { scale: "h-56 w-56", barClass: "w-40", hitReach: 170, contactRange: 150, contactDamage: 20 },
 }
 
-function IsabellaSprite() {
+function IsabellaSprite({ mood = "speaking" }: { mood?: "speaking" | "relieved" }) {
   return (
-    <div className="isabella-sprite" role="img" aria-label="Princesa Isabella em seu vestido real">
-      <div className="isabella-crown" />
-      <div className="isabella-head" />
-      <div className="isabella-hair" />
-      <div className="isabella-dress" />
-      <div className="isabella-sleeve isabella-sleeve-left" />
-      <div className="isabella-sleeve isabella-sleeve-right" />
+    <div
+      className={`isabella-sprite ${mood === "relieved" ? "isabella-relieved" : "isabella-speaking"}`}
+      role="img"
+      aria-label="Princesa Isabella em seu vestido real"
+    >
+      <div className="isabella-sprite-art" aria-hidden="true" />
+      <div className="isabella-glitter" aria-hidden="true">
+        <span />
+        <span />
+        <span />
+        <span />
+        <span />
+      </div>
     </div>
   )
 }
@@ -439,10 +445,10 @@ export default function Page() {
         <div className="rescue-light absolute inset-0" aria-hidden="true" />
         {!finished ? (
           <section className="relative z-10 flex w-full max-w-3xl flex-col items-center gap-5">
-            <div className="relative flex h-72 w-full items-end justify-center">
-              <div className="rescue-player absolute bottom-2 left-[28%] h-24 w-16" aria-label="Jogador" />
-              <IsabellaSprite />
-            </div>
+      <div className="relative flex h-72 w-full items-end justify-center">
+        <div className="rescue-player absolute bottom-2 left-[28%] h-24 w-16" aria-label="Jogador" />
+        <IsabellaSprite mood={finalLine === 1 ? "relieved" : "speaking"} />
+      </div>
             <div className="w-full border-4 border-amber-700 bg-stone-950/95 p-6 text-left shadow-[8px_8px_0_rgba(72,45,20,0.35)]">
               <p className="font-pixel text-xs uppercase tracking-[0.2em] text-amber-400">Princesa Isabella</p>
               <p className="mt-4 font-pixel-body text-3xl leading-tight text-amber-50">{FINAL_DIALOGUE_LINES[finalLine]}</p>

@@ -284,67 +284,74 @@
 .isabella-sprite {
   position: relative;
   z-index: 1;
-  height: 220px;
-  width: 150px;
-  filter: drop-shadow(0 14px 0 rgba(120,53,15,.14));
+  height: 242px;
+  width: 176px;
+  filter: drop-shadow(0 16px 0 rgba(91, 33, 27, .16));
 }
 
-.isabella-crown {
+.isabella-sprite-art {
   position: absolute;
-  left: 52px;
-  top: 0;
-  z-index: 3;
-  height: 28px;
-  width: 48px;
-  background: #facc15;
-  clip-path: polygon(0 100%, 8% 20%, 30% 62%, 50% 0, 70% 62%, 92% 20%, 100% 100%);
-  border-bottom: 5px solid #a16207;
+  inset: 0;
+  background-image: url('/sprites/isabella-royal-pixel.png');
+  background-repeat: no-repeat;
+  background-size: 400% 100%;
+  background-position: 0 0;
+  image-rendering: pixelated;
+  animation: isabella-idle 2.8s steps(4, end) infinite;
 }
 
-.isabella-head {
+.isabella-speaking .isabella-sprite-art {
+  animation: isabella-speaking 1.15s steps(4, end) infinite;
+}
+
+.isabella-relieved .isabella-sprite-art {
+  animation: isabella-relieved 1.45s steps(4, end) both;
+}
+
+@keyframes isabella-idle {
+  0%, 28% { background-position: 0 0; transform: translateY(0); }
+  32%, 52% { background-position: 33.333% 0; transform: translateY(-2px); }
+  56%, 78% { background-position: 0 0; transform: translateY(0); }
+  82%, 100% { background-position: 66.666% 0; transform: translateY(-1px); }
+}
+
+@keyframes isabella-speaking {
+  0%, 18% { background-position: 0 0; transform: translateY(0) rotate(0); }
+  25%, 55% { background-position: 66.666% 0; transform: translateY(-2px) rotate(-1deg); }
+  62%, 100% { background-position: 0 0; transform: translateY(0) rotate(0); }
+}
+
+@keyframes isabella-relieved {
+  0% { background-position: 0 0; transform: translateY(0) scale(1); filter: brightness(1); }
+  38% { background-position: 100% 0; transform: translateY(-7px) scale(1.025); filter: brightness(1.14); }
+  72%, 100% { background-position: 0 0; transform: translateY(0) scale(1); filter: brightness(1); }
+}
+
+.isabella-glitter {
   position: absolute;
-  left: 49px;
-  top: 19px;
-  height: 62px;
-  width: 54px;
-  background: #f5c7a9;
-  border: 5px solid #78350f;
-  box-shadow: inset 0 -12px #fca5a5;
+  inset: 8% -14% 12%;
+  pointer-events: none;
 }
 
-.isabella-hair {
+.isabella-glitter span {
   position: absolute;
-  left: 35px;
-  top: 24px;
-  height: 82px;
-  width: 82px;
-  border: 12px solid #92400e;
-  border-top-width: 18px;
-  border-radius: 48% 48% 42% 42%;
+  height: 5px;
+  width: 5px;
+  background: #f6d889;
+  box-shadow: 0 0 8px 3px rgba(246, 216, 137, .72);
+  animation: isabella-glitter 2.4s ease-in-out infinite;
 }
 
-.isabella-dress {
-  position: absolute;
-  left: 15px;
-  top: 77px;
-  height: 143px;
-  width: 120px;
-  background: linear-gradient(90deg, #312e81, #818cf8 48%, #312e81);
-  border: 6px solid #1e1b4b;
-  clip-path: polygon(38% 0, 62% 0, 72% 35%, 100% 100%, 0 100%, 28% 35%);
-}
+.isabella-glitter span:nth-child(1) { left: 14%; top: 30%; animation-delay: -.4s; }
+.isabella-glitter span:nth-child(2) { left: 78%; top: 22%; animation-delay: -1.1s; }
+.isabella-glitter span:nth-child(3) { left: 86%; top: 62%; animation-delay: -1.7s; }
+.isabella-glitter span:nth-child(4) { left: 7%; top: 70%; animation-delay: -.8s; }
+.isabella-glitter span:nth-child(5) { left: 52%; top: 4%; animation-delay: -2s; }
 
-.isabella-sleeve {
-  position: absolute;
-  top: 92px;
-  height: 24px;
-  width: 52px;
-  background: #f5c7a9;
-  border: 5px solid #78350f;
+@keyframes isabella-glitter {
+  0%, 100% { opacity: .15; transform: translateY(8px) scale(.7) rotate(0); }
+  45% { opacity: 1; transform: translateY(-7px) scale(1.15) rotate(45deg); }
 }
-
-.isabella-sleeve-left { left: 0; transform: rotate(25deg); }
-.isabella-sleeve-right { right: 0; transform: rotate(-25deg); }
 
 .rescue-player {
   z-index: 2;
