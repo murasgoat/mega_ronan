@@ -59,7 +59,16 @@ export function usePlayerControls(
   }, [])
 
   useEffect(() => {
-    if (!enabled) return
+    if (!enabled) {
+      keys.current.clear()
+      return
+    }
+
+    // Recupera o foco após cutscenes/transições e garante que nenhum input antigo persista.
+    keys.current.clear()
+    window.focus()
+    const gameContainer = document.querySelector<HTMLElement>('[aria-label="Área de jogo"]')
+    gameContainer?.focus({ preventScroll: true })
 
     const down = (e: KeyboardEvent) => {
       const code = e.code

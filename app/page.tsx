@@ -88,6 +88,7 @@ export default function Page() {
   const [bossAwakened, setBossAwakened] = useState(false)
   const manager = useRef(createStageManager())
   const gameLoopRef = useRef<NodeJS.Timeout | null>(null)
+  const bossCutsceneTimerRef = useRef<number | null>(null)
   const gameContainerRef = useRef<HTMLElement | null>(null)
   const lastUpdateRef = useRef(0)
   const dragonActionTimerRef = useRef(0)
@@ -101,6 +102,10 @@ export default function Page() {
     setCrystalCollected(false)
     setPlayerDamageFreeze(0)
     setHasPlayerMoved(false)
+    if (bossCutsceneTimerRef.current !== null) {
+      window.clearTimeout(bossCutsceneTimerRef.current)
+      bossCutsceneTimerRef.current = null
+    }
     setBossCutscene(false)
     setBossAwakened(false)
     dragonActionTimerRef.current = 0
@@ -192,14 +197,24 @@ export default function Page() {
   // congela o jogador (~1.8s), toca a animação de despertar e então
   // libera o controle e ativa a IA de perseguição do Boss.
   useEffect(() => {
-    if (phase !== "playing" || stage !== 5) return
-    if (!hasPlayerMoved || bossAwakened || bossCutscene) return
+    if (phase !== "playing" || stage !== 5 || !hasPlayerMoved || bossAwakened || bossCutscene) return
+
     setBossCutscene(true)
-    const timer = window.setTimeout(() => {
+    bossCutsceneTimerRef.current = window.setTimeout(() => {
+      // Cleanup explícito: a IA e os listeners só voltam depois que o lock é removido.
+      bossCutsceneTimerRef.current = null
       setBossCutscene(false)
       setBossAwakened(true)
+      window.focus()
+      gameContainerRef.current?.focus({ preventScroll: true })
     }, 1800)
-    return () => window.clearTimeout(timer)
+
+    return () => {
+      if (bossCutsceneTimerRef.current !== null) {
+        window.clearTimeout(bossCutsceneTimerRef.current)
+        bossCutsceneTimerRef.current = null
+      }
+    }
   }, [phase, stage, hasPlayerMoved, bossAwakened, bossCutscene])
 
   const interact = useCallback(() => {
