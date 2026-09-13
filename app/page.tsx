@@ -106,6 +106,7 @@ export default function Page() {
   const [hero, setHero] = useState(PARTY[0])
   const [stage, setStage] = useState<StageId>(1)
   const [transitionStage, setTransitionStage] = useState<StageId | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
   const [dragonHp, setDragonHp] = useState(8)
   const [dragonProjectiles, setDragonProjectiles] = useState<Projectile[]>([])
   const [crystalDropped, setCrystalDropped] = useState(false)
@@ -120,11 +121,14 @@ export default function Page() {
   const manager = useRef(createStageManager())
   const gameLoopRef = useRef<NodeJS.Timeout | null>(null)
   const bossCutsceneTimerRef = useRef<number | null>(null)
+  const loadingTimerRef = useRef<number | null>(null)
   const gameContainerRef = useRef<HTMLElement | null>(null)
   const lastUpdateRef = useRef(0)
   const dragonActionTimerRef = useRef(0)
 
   const beginStage = useCallback((next: StageId) => {
+    setIsLoading(true)
+    setTransitionStage(next)
     setStage(next)
     setFinalLine(0)
     setObjectiveProgress(0)
@@ -146,9 +150,28 @@ export default function Page() {
         ? ENEMY_SETS[next as 3 | 4 | 5].map((enemy) => ({ ...enemy, actionTimer: 0 }))
         : []
     )
-    setTransitionStage(next)
     setPhase("playing")
   }, [])
+
+  useEffect(() => {
+    if (!isLoading) return
+
+    if (loadingTimerRef.current !== null) window.clearTimeout(loadingTimerRef.current)
+    loadingTimerRef.current = window.setTimeout(() => {
+      loadingTimerRef.current = null
+      setIsLoading(false)
+      setTransitionStage(null)
+      window.focus()
+      gameContainerRef.current?.focus({ preventScroll: true })
+    }, 2000)
+
+    return () => {
+      if (loadingTimerRef.current !== null) {
+        window.clearTimeout(loadingTimerRef.current)
+        loadingTimerRef.current = null
+      }
+    }
+  }, [isLoading, stage])
 
   const completeObjective = useCallback(
     (id: string, amount = 1) => {
@@ -220,7 +243,7 @@ export default function Page() {
   }, [])
 
   const player = usePlayerControls(
-    phase === "playing" && !bossCutscene,
+    phase === "playing" && !bossCutscene && !isLoading,
     () => attack(player.x, player.y),
     stage,
     hero.speed,
@@ -686,7 +709,7 @@ export default function Page() {
         </div>
       )}
 
-      <StageTransition stage={transitionStage} onComplete={() => setTransitionStage(null)} />
+      <StageTransition stage={transitionStage} isLoading={isLoading} />
     </main>
   )
 }
